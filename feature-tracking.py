@@ -1,5 +1,5 @@
 import time
-from numpy import empty
+import copy
 import cv2
 import os
 import datetime
@@ -14,11 +14,14 @@ paths = []
 
 finishLines = []
 
-thickness = 3
+thickness = 1
+
+standardThickness = 2
 
 success, img = cap.read()
+cache = copy.deepcopy(img)
 
-maxTracker = 2
+maxTracker = 1
 
 startPoint = []
 endPoint = []
@@ -27,12 +30,18 @@ lineArr = []
 
 countLines = 0
 
-os.chdir(directory)
-print(os.listdir(directory))
+filename = ''
 
-filename = 'tracked Line at ' + str(time.time()) + '.jpg'
+os.chdir(directory)
+
+def initVars(i):
+    paths.append(None)
+    startPoint.append((0,0))
+    endPoint.append((0,0))
+    lineArr.append([None])
 
 def drawLines(img):
+    global thickness
     global startPoint
     global endPoint
     global lineArr
@@ -46,29 +55,27 @@ def drawLines(img):
         lineArr[i][countLines] = startPoint[i]
         lineArr[i].append(endPoint[i])
     countLines += 1
+    if thickness != standardThickness:
+        thickness = standardThickness
 
 for i in range(0, maxTracker):
     tracker.append(cv2.TrackerCSRT_create())
     bbox.append(cv2.selectROI("Tracking", img, False))
     tracker[i].init(img, bbox[i])
-    paths.append(None)
-    startPoint.append((0,0))
-    endPoint.append((0,0))
-    lineArr.append([None])
-    #print(endPoint[i])
+    initVars(i)
 
 drawLines(img)
-#tracker = cv2.TrackerMOSSE_create()
-#tracker = cv2.TrackerCSRT_create()
-#success, img = cap.read()
-#bbox = cv2.selectROI("Tracking", img, False)
-#tracker.init(img, bbox)
 
 def drawBox(img, bbox):
     x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
     cv2.rectangle(img, (x,y), ((x+w),(y+h)), (255, 0, 255), 3, 1)
 
 def drawAllLines(img):
+    global cache
+    cache = copy.deepcopy(img)
+    global filename
+    filename = 'tracked Line at ' + str(time.time()) + '.jpg'
+    print(filename)
     for i in range(0, maxTracker):
         finishLines.append([None])
         color = (50*(i), 100*(i+1), 200*(i+2)/4)
@@ -77,11 +84,22 @@ def drawAllLines(img):
             finishLines[i].append([None])
             finishLines[i][a] = cv2.line(img, tuple(lineArr[i][a]), tuple(lineArr[i][a+1]), color, thickness)
 
+def clearVars():
+    finishLines.clear()
+    paths.clear()
+    countLines = 0
+    for i in range(0, maxTracker):
+        initVars(i)
+    print(finishLines)
+
 while True:
 
     if(cv2.waitKey(1) & 0xff == ord('q')):
         drawAllLines(img)
         cv2.imwrite(filename, img)
+        img = copy.deepcopy(img)
+        print(os.listdir(directory))
+        clearVars()
 
     timer = cv2.getTickCount()
     success, img = cap.read()
