@@ -32,6 +32,8 @@ countLines = 0
 
 filename = ''
 
+img2 = img
+
 os.chdir(directory)
 
 def initVars(i):
@@ -82,7 +84,7 @@ def drawAllLines(img):
 
         for a in range(0, int(countLines-1)):
             finishLines[i].append([None])
-            finishLines[i][a] = cv2.line(img, tuple(lineArr[i][a]), tuple(lineArr[i][a+1]), color, thickness)
+            finishLines[i][a] = cv2.line(img2, tuple(lineArr[i][a]), tuple(lineArr[i][a+1]), color, thickness)
 
 def clearVars():
     finishLines.clear()
@@ -96,8 +98,8 @@ while True:
 
     if(cv2.waitKey(1) & 0xff == ord('q')):
         drawAllLines(img)
-        cv2.imwrite(filename, img)
-        img = copy.deepcopy(img)
+        cv2.imwrite(filename, img2)
+        img2 = copy.deepcopy(cache)
         print(os.listdir(directory))
         clearVars()
 
